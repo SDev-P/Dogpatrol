@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PawPatrol • Smartphone GPS Transmitter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #020617;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px;
+      padding: 16px;
+    }
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 12px #10b981;
+      animation: pulse 1.5s infinite;
+    }
+    .pulse-dot.inactive {
+      background: #64748b;
+      box-shadow: none;
+      animation: none;
+    }
+    .pulse-dot.error {
+      background: #ef4444;
+      box-shadow: 0 0 12px #ef4444;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+    .btn-start {
+      background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+      color: #ffffff;
+      box-shadow: 0 8px 24px -4px rgba(13, 148, 136, 0.4);
+    }
+    .btn-start:active {
+      transform: scale(0.98);
+      filter: brightness(1.1);
+    }
+    .btn-stop {
+      background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
+      color: #ffffff;
+      box-shadow: 0 8px 24px -4px rgba(225, 29, 72, 0.4);
+    }
+    .btn-stop:active {
+      transform: scale(0.98);
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-box {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-live {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .badge-idle {
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #f1f5f9;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+    input:focus {
+      border-color: #14b8a6;
+    }
+    .log-box {
+      max-height: 120px;
+      overflow-y: auto;
+      font-size: 11px;
+      color: #94a3b8;
+      background: #020617;
+      border-radius: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .log-entry {
+      margin-bottom: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="glass-card" style="margin-bottom: 12px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 20px;">🐕</span>
+        <div>
+          <h1 style="font-size: 15px; font-weight: 800; letter-spacing: -0.3px;">PawPatrol GPS</h1>
+          <p style="font-size: 11px; color: #94a3b8;">Phone Transmitter for Dog Robot</p>
+        </div>
+      </div>
+      <div id="statusBadge" class="badge badge-idle">
+        <div id="statusPulse" class="pulse-dot inactive"></div>
+        <span id="statusText">STANDBY</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Primary Coordinate Display -->
+  <div class="glass-card" style="margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <span style="font-size: 12px; font-weight: 700; color: #14b8a6; letter-spacing: 0.5px;">ROBOT SATELLITE FIX</span>
+      <span id="lastFixTime" class="mono" style="font-size: 11px; color: #64748b;">No Fix Yet</span>
+    </div>
+
+    <div style="margin-bottom: 12px; background: rgba(2, 6, 23, 0.6); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span class="stat-label">Latitude</span>
+        <span id="latDisplay" class="mono stat-value" style="font-size: 20px;">--.------°</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span class="stat-label">Longitude</span>
+        <span id="lngDisplay" class="mono stat-value" style="font-size: 20px;">--.------°</span>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-label">Accuracy</div>
+        <div id="accDisplay" class="mono stat-value" style="color: #10b981;">-- m</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Speed</div>
+        <div id="speedDisplay" class="mono stat-value" style="color: #f59e0b;">-- km/h</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Packets Sent</div>
+        <div id="packetsCount" class="mono stat-value" style="color: #a855f7;">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Heading</div>
+        <div id="headingDisplay" class="mono stat-value" style="color: #ec4899;">--°</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Big Action Controls -->
+  <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+    <button id="toggleBtn" class="btn btn-start" onclick="toggleTracking()">
+      <span style="font-size: 20px;">📡</span>
+      <span id="btnText">START TRANSMITTING GPS</span>
+    </button>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <button onclick="pingServer()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #38bdf8; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
+        ⚡ Ping Server
+      </button>
+      <button onclick="sendTestPacket()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #34d399; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
+        🧪 Send Test Packet
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings / Server Config -->
+  <div class="glass-card" style="margin-bottom: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Backend Endpoint</span>
+      <button onclick="toggleConfig()" style="background: none; border: none; color: #14b8a6; font-size: 11px; font-weight: 600; cursor: pointer;">Configure</button>
+    </div>
+    <div id="configSection" style="display: none; margin-top: 8px;">
+      <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Server URL (Auto-detected):</label>
+      <input type="text" id="serverUrl" value="" placeholder="http://192.168.1.100:3001">
+      <label style="font-size: 11px; color: #94a3b8; display: block; margin-top: 8px; margin-bottom: 4px;">Robot ID:</label>
+      <input type="text" id="robotId" value="ROBOT-DOG-01">
+    </div>
+    <div id="serverDisplay" class="mono" style="font-size: 11px; color: #64748b; word-break: break-all;">
+      Target: <span id="currentTargetText" style="color: #38bdf8;">--</span>
+    </div>
+  </div>
+
+  <!-- Live Telemetry Transmission Logs -->
+  <div class="glass-card" style="flex: 1; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Transmission Log</span>
+      <span id="networkStatus" style="font-size: 10px; color: #10b981;">Online</span>
+    </div>
+    <div id="logBox" class="log-box" style="flex: 1;">
+      <div class="log-entry" style="color: #64748b;">[Ready] Mount phone on robot and tap Start.</div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let isTracking = false;
+    let watchId = null;
+    let packetsSent = 0;
+    let wakeLock = null;
+
+    // Elements
+    const latDisplay = document.getElementById('latDisplay');
+    const lngDisplay = document.getElementById('lngDisplay');
+    const accDisplay = document.getElementById('accDisplay');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const headingDisplay = document.getElementById('headingDisplay');
+    const packetsCount = document.getElementById('packetsCount');
+    const lastFixTime = document.getElementById('lastFixTime');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusPulse = document.getElementById('statusPulse');
+    const statusText = document.getElementById('statusText');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const btnText = document.getElementById('btnText');
+    const logBox = document.getElementById('logBox');
+    const serverUrlInput = document.getElementById('serverUrl');
+    const robotIdInput = document.getElementById('robotId');
+    const currentTargetText = document.getElementById('currentTargetText');
+    const networkStatus = document.getElementById('networkStatus');
+
+    // Auto-configure Backend URL based on host
+    function getDefaultServerUrl() {
+      const hostname = window.location.hostname || 'localhost';
+      return `http://${hostname}:3001`;
+    }
+
+    const defaultUrl = getDefaultServerUrl();
+    serverUrlInput.value = localStorage.getItem('pawpatrol_gps_server') || defaultUrl;
+    currentTargetText.textContent = `${serverUrlInput.value}/api/gps/location`;
+
+    serverUrlInput.addEventListener('change', () => {
+      localStorage.setItem('pawpatrol_gps_server', serverUrlInput.value.trim());
+      currentTargetText.textContent = `${serverUrlInput.value.trim()}/api/gps/location`;
+      addLog(`Updated target URL: ${serverUrlInput.value}`);
+    });
+
+    function toggleConfig() {
+      const sec = document.getElementById('configSection');
+      sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function addLog(msg, color = '#94a3b8') {
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.style.color = color;
+      div.textContent = `[${time}] ${msg}`;
+      logBox.appendChild(div);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Keep screen awake while tracking if supported
+    async function requestWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLock = await navigator.wakeLock.request('screen');
+          addLog('Screen wake lock acquired (screen stays on)', '#38bdf8');
+        } catch (e) {
+          console.warn('Wake lock failed:', e);
+        }
+      }
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; });
+      }
+    }
+
+    // Toggle Tracking
+    function toggleTracking() {
+      if (isTracking) {
+        stopTracking();
+      } else {
+        startTracking();
+      }
+    }
+
+    function startTracking() {
+      if (!('geolocation' in navigator)) {
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      addLog('Requesting High-Accuracy GPS sensor...', '#f59e0b');
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+
+      watchId = navigator.geolocation.watchPosition(
+        handlePositionSuccess,
+        handlePositionError,
+        options
+      );
+
+      isTracking = true;
+      toggleBtn.className = 'btn btn-stop';
+      btnText.textContent = 'STOP TRANSMITTING GPS';
+      statusBadge.className = 'badge badge-live';
+      statusPulse.className = 'pulse-dot';
+      statusText.textContent = 'TRANSMITTING';
+
+      requestWakeLock();
+      addLog('GPS Tracking active. Transmitting to robot dashboard.', '#10b981');
+    }
+
+    function stopTracking() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+
+      isTracking = false;
+      toggleBtn.className = 'btn btn-start';
+      btnText.textContent = 'START TRANSMITTING GPS';
+      statusBadge.className = 'badge badge-idle';
+      statusPulse.className = 'pulse-dot inactive';
+      statusText.textContent = 'STANDBY';
+
+      releaseWakeLock();
+      addLog('GPS transmission paused.', '#94a3b8');
+    }
+
+    function handlePositionSuccess(pos) {
+      const { latitude, longitude, accuracy, speed, heading } = pos.coords;
+      const timestamp = new Date(pos.timestamp).toISOString();
+
+      latDisplay.textContent = latitude.toFixed(6) + '°';
+      lngDisplay.textContent = longitude.toFixed(6) + '°';
+      accDisplay.textContent = '±' + (accuracy ? accuracy.toFixed(1) : '?') + ' m';
+      speedDisplay.textContent = speed !== null ? (speed * 3.6).toFixed(1) + ' km/h' : '0.0 km/h';
+      headingDisplay.textContent = heading !== null && !isNaN(heading) ? heading.toFixed(0) + '°' : '--°';
+      lastFixTime.textContent = new Date().toLocaleTimeString();
+
+      // Transmit to backend
+      sendLocationUpdate({
+        robotId: robotIdInput.value.trim() || 'ROBOT-DOG-01',
+        latitude,
+        longitude,
+        accuracy,
+        speed: speed !== null ? speed * 3.6 : 0,
+        heading: heading || 0,
+        timestamp
+      });
+    }
+
+    function handlePositionError(err) {
+      let message = 'Unknown GPS Error';
+      switch (err.code) {
+        case err.PERMISSION_DENIED:
+          message = 'Location access denied. Please allow GPS permission in browser settings.';
+          break;
+        case err.POSITION_UNAVAILABLE:
+          message = 'GPS signal unavailable. Ensure location is enabled and you have sky visibility.';
+          break;
+        case err.TIMEOUT:
+          message = 'GPS fix timed out. Acquiring new satellites...';
+          break;
+      }
+      addLog('GPS Error: ' + message, '#ef4444');
+      statusText.textContent = 'GPS ERR';
+      statusPulse.className = 'pulse-dot error';
+    }
+
+    async function sendLocationUpdate(data) {
+      const baseUrl = serverUrlInput.value.trim() || defaultUrl;
+      const endpoint = `${baseUrl}/api/gps/location`;
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+          packetsSent++;
+          packetsCount.textContent = packetsSent;
+          addLog(`✓ Packet #${packetsSent} broadcasted: [${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}]`, '#34d399');
+        } else {
+          addLog(`Server responded with ${response.status}`, '#f59e0b');
+        }
+      } catch (err) {
+        addLog(`Network send failed: ${err.message}`, '#f43f5e');
+      }
+    }
+
+    async function pingServer() {
+      const baseUrl = serverUrlInput.value.trim() || defaultUrl;
+      addLog(`Pinging backend: ${baseUrl}/api/health ...`, '#38bdf8');
+      try {
+        const res = await fetch(`${baseUrl}/api/health`);
+        if (res.ok) {
+          const json = await res.json();
+          addLog(`✓ Backend Online! Active clients: ${json.connectedClients}`, '#34d399');
+          alert('✓ Success! Your phone is connected to the PawPatrol server.');
+        } else {
+          addLog(`Server responded with status: ${res.status}`, '#f59e0b');
+        }
+      } catch (e) {
+        addLog(`Cannot reach ${baseUrl}. Ensure phone is on the same Wi-Fi.`, '#f43f5e');
+        alert(`Cannot reach backend at ${baseUrl}.\n\nPlease ensure your smartphone is connected to the same Wi-Fi as your computer.`);
+      }
+    }
+
+    async function sendTestPacket() {
+      const lat = 9.9312 + (Math.random() - 0.5) * 0.002;
+      const lng = 76.2673 + (Math.random() - 0.5) * 0.002;
+      latDisplay.textContent = lat.toFixed(6) + '°';
+      lngDisplay.textContent = lng.toFixed(6) + '°';
+      accDisplay.textContent = '±2.5 m';
+      speedDisplay.textContent = '3.2 km/h';
+      headingDisplay.textContent = '72°';
+      lastFixTime.textContent = new Date().toLocaleTimeString();
+
+      await sendLocationUpdate({
+        robotId: robotIdInput.value.trim() || 'ROBOT-DOG-01',
+        latitude: lat,
+        longitude: lng,
+        accuracy: 2.5,
+        speed: 3.2,
+        heading: 72,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Network status listener
+    window.addEventListener('online', () => {
+      networkStatus.textContent = 'Online';
+      networkStatus.style.color = '#10b981';
+      addLog('Internet connection restored', '#10b981');
+    });
+
+    window.addEventListener('offline', () => {
+      networkStatus.textContent = 'Offline';
+      networkStatus.style.color = '#ef4444';
+      addLog('Device went offline. Coordinates will resume on reconnect.', '#ef4444');
+    });
+  </script>
+</body>
+</html>
+

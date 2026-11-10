@@ -1,0 +1,24 @@
+[
+  { "id": 1, "lat": 10.00950, "lng": 76.36380, "speed": 0.0, "altitude": 18, "accuracy": 3.2, "heading": 0, "time": "10:00:00 AM" },
+  { "id": 2, "lat": 10.00972, "lng": 76.36395, "speed": 2.8, "altitude": 18, "accuracy": 3.1, "heading": 35, "time": "10:00:15 AM" },
+  { "id": 3, "lat": 10.01005, "lng": 76.36418, "speed": 3.4, "altitude": 19, "accuracy": 2.8, "heading": 40, "time": "10:00:30 AM" },
+  { "id": 4, "lat": 10.01042, "lng": 76.36442, "speed": 3.8, "altitude": 19, "accuracy": 2.5, "heading": 42, "time": "10:00:45 AM" },
+  { "id": 5, "lat": 10.01085, "lng": 76.36475, "speed": 4.1, "altitude": 20, "accuracy": 2.5, "heading": 45, "time": "10:01:00 AM" },
+  { "id": 6, "lat": 10.01118, "lng": 76.36512, "speed": 3.9, "altitude": 21, "accuracy": 2.7, "heading": 55, "time": "10:01:15 AM" },
+  { "id": 7, "lat": 10.01135, "lng": 76.36560, "speed": 3.6, "altitude": 22, "accuracy": 3.0, "heading": 75, "time": "10:01:30 AM" },
+  { "id": 8, "lat": 10.01120, "lng": 76.36615, "speed": 3.2, "altitude": 22, "accuracy": 3.1, "heading": 105, "time": "10:01:45 AM" },
+  { "id": 9, "lat": 10.01082, "lng": 76.36652, "speed": 3.5, "altitude": 21, "accuracy": 2.9, "heading": 130, "time": "10:02:00 AM" },
+  { "id": 10, "lat": 10.01035, "lng": 76.36678, "speed": 3.7, "altitude": 20, "accuracy": 2.6, "heading": 155, "time": "10:02:15 AM" },
+  { "id": 11, "lat": 10.00985, "lng": 76.36685, "speed": 4.0, "altitude": 19, "accuracy": 2.4, "heading": 175, "time": "10:02:30 AM" },
+  { "id": 12, "lat": 10.00932, "lng": 76.36670, "speed": 4.2, "altitude": 18, "accuracy": 2.5, "heading": 195, "time": "10:02:45 AM" },
+  { "id": 13, "lat": 10.00880, "lng": 76.36635, "speed": 3.9, "altitude": 18, "accuracy": 2.8, "heading": 215, "time": "10:03:00 AM" },
+  { "id": 14, "lat": 10.00840, "lng": 76.36585, "speed": 3.5, "altitude": 17, "accuracy": 3.0, "heading": 230, "time": "10:03:15 AM" },
+  { "id": 15, "lat": 10.00815, "lng": 76.36525, "speed": 3.1, "altitude": 17, "accuracy": 3.2, "heading": 250, "time": "10:03:30 AM" },
+  { "id": 16, "lat": 10.00810, "lng": 76.36460, "speed": 3.4, "altitude": 17, "accuracy": 3.1, "heading": 270, "time": "10:03:45 AM" },
+  { "id": 17, "lat": 10.00825, "lng": 76.36398, "speed": 3.8, "altitude": 18, "accuracy": 2.8, "heading": 290, "time": "10:04:00 AM" },
+  { "id": 18, "lat": 10.00860, "lng": 76.36345, "speed": 4.1, "altitude": 18, "accuracy": 2.5, "heading": 315, "time": "10:04:15 AM" },
+  { "id": 19, "lat": 10.00905, "lng": 76.36320, "speed": 3.9, "altitude": 18, "accuracy": 2.7, "heading": 340, "time": "10:04:30 AM" },
+  { "id": 20, "lat": 10.00945, "lng": 76.36340, "speed": 3.2, "altitude": 18, "accuracy": 2.9, "heading": 15, "time": "10:04:45 AM" },
+  { "id": 21, "lat": 10.00950, "lng": 76.36380, "speed": 0.0, "altitude": 18, "accuracy": 3.0, "heading": 0, "time": "10:05:00 AM" }
+]
+
