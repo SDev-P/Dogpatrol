@@ -85,8 +85,9 @@ export default function LiveGpsTrackingPage() {
   };
 
   // Determine the best LAN IP for the phone to reach
+  // Uses the hostname the browser loaded the dashboard from — works on any network
   const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  const networkIp = (currentHostname === 'localhost' || currentHostname === '127.0.0.1') ? '172.17.207.41' : currentHostname;
+  const networkIp = currentHostname;
   const phoneUrl = `http://${networkIp}:3000/phone.html`;
   const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(phoneUrl)}`;
 
@@ -217,7 +218,9 @@ export default function LiveGpsTrackingPage() {
           <div class="relative flex items-center justify-center">
             <div class="absolute -inset-3 rounded-full bg-teal-500/30 animate-ping"></div>
             <div class="absolute -inset-1.5 rounded-full bg-teal-400/40 blur-xs"></div>
-            <div class="relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-700 via-teal-600 to-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-teal-500/50 border-2 border-white transform transition-transform duration-300" style="transform: rotate(${currentLocation.heading || 0}deg);">
+            <div class="robot-compass-heading relative w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-700 via-teal-600 to-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-teal-500/50 border-2 border-white transform transition-transform duration-200" style="transform: rotate(${currentLocation.heading || 0}deg);">
+              <!-- Directional Forward Heading Pointer -->
+              <div class="absolute -top-2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[9px] border-b-emerald-300 filter drop-shadow"></div>
               <span style="font-size: 22px;">🐕</span>
             </div>
             <div class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 shadow"></div>
@@ -241,6 +244,14 @@ export default function LiveGpsTrackingPage() {
       `);
     } else {
       robotMarkerRef.current.setLatLng(latLng);
+      // Smoothly rotate heading in real time as the phone turns
+      const markerEl = robotMarkerRef.current.getElement();
+      if (markerEl) {
+        const headingEl = markerEl.querySelector('.robot-compass-heading');
+        if (headingEl) {
+          headingEl.style.transform = `rotate(${Math.round(currentLocation.heading || 0)}deg)`;
+        }
+      }
     }
 
     // Update GPS Accuracy circle
@@ -259,9 +270,9 @@ export default function LiveGpsTrackingPage() {
       }
     }
 
-    // Auto-center map if enabled
+    // Auto-center map if enabled with smooth quick pan
     if (autoCenter) {
-      map.panTo(latLng, { animate: true, duration: 0.6 });
+      map.panTo(latLng, { animate: true, duration: 0.25 });
     }
   }, [currentLocation, autoCenter]);
 

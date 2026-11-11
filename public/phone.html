@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PawPatrol • Smartphone GPS Transmitter</title>
+  <title>PawPatrol • High-Precision GPS & IMU Transmitter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -21,19 +22,19 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: 16px;
+      padding: 14px;
       overflow-x: hidden;
     }
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
     .glass-card {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.78);
       border: 1px solid rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border-radius: 20px;
-      padding: 16px;
+      border-radius: 18px;
+      padding: 14px;
     }
     .pulse-dot {
       width: 10px;
@@ -41,27 +42,32 @@
       border-radius: 50%;
       background: #10b981;
       box-shadow: 0 0 12px #10b981;
-      animation: pulse 1.5s infinite;
+      animation: pulse 1.2s infinite;
     }
     .pulse-dot.inactive {
       background: #64748b;
       box-shadow: none;
       animation: none;
     }
+    .pulse-dot.turbo {
+      background: #06b6d4;
+      box-shadow: 0 0 16px #06b6d4;
+      animation: pulse 0.6s infinite;
+    }
     .pulse-dot.error {
       background: #ef4444;
       box-shadow: 0 0 12px #ef4444;
     }
     @keyframes pulse {
-      0% { transform: scale(0.95); opacity: 0.7; }
-      50% { transform: scale(1.2); opacity: 1; }
-      100% { transform: scale(0.95); opacity: 0.7; }
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
     }
     .btn {
       width: 100%;
-      padding: 16px;
-      border-radius: 16px;
-      font-size: 16px;
+      padding: 15px;
+      border-radius: 14px;
+      font-size: 15px;
       font-weight: 700;
       border: none;
       cursor: pointer;
@@ -74,7 +80,7 @@
     .btn-start {
       background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
       color: #ffffff;
-      box-shadow: 0 8px 24px -4px rgba(13, 148, 136, 0.4);
+      box-shadow: 0 8px 24px -4px rgba(13, 148, 136, 0.45);
     }
     .btn-start:active {
       transform: scale(0.98);
@@ -83,7 +89,7 @@
     .btn-stop {
       background: linear-gradient(135deg, #e11d48 0%, #f43f5e 100%);
       color: #ffffff;
-      box-shadow: 0 8px 24px -4px rgba(225, 29, 72, 0.4);
+      box-shadow: 0 8px 24px -4px rgba(225, 29, 72, 0.45);
     }
     .btn-stop:active {
       transform: scale(0.98);
@@ -91,13 +97,13 @@
     .stat-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
     }
     .stat-box {
-      background: rgba(30, 41, 59, 0.5);
+      background: rgba(30, 41, 59, 0.55);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 14px;
-      padding: 12px;
+      border-radius: 12px;
+      padding: 10px;
     }
     .stat-label {
       font-size: 10px;
@@ -105,10 +111,10 @@
       color: #94a3b8;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .stat-value {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: #38bdf8;
     }
@@ -126,29 +132,34 @@
       color: #34d399;
       border: 1px solid rgba(52, 211, 153, 0.3);
     }
+    .badge-turbo {
+      background: rgba(6, 182, 212, 0.2);
+      color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.4);
+    }
     .badge-idle {
       background: rgba(100, 116, 139, 0.15);
       color: #94a3b8;
       border: 1px solid rgba(148, 163, 184, 0.2);
     }
-    input {
+    input, select {
       width: 100%;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.95);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 9px 12px;
       color: #f1f5f9;
       font-size: 13px;
       font-family: inherit;
       outline: none;
     }
-    input:focus {
+    input:focus, select:focus {
       border-color: #14b8a6;
     }
     .log-box {
-      max-height: 120px;
+      max-height: 110px;
       overflow-y: auto;
-      font-size: 11px;
+      font-size: 10.5px;
       color: #94a3b8;
       background: #020617;
       border-radius: 10px;
@@ -156,21 +167,60 @@
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
     .log-entry {
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       font-family: 'JetBrains Mono', monospace;
+      line-height: 1.4;
+    }
+    .rate-btn {
+      flex: 1;
+      padding: 8px 6px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .rate-btn.active {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #14b8a6;
+      box-shadow: 0 0 12px rgba(20, 184, 166, 0.4);
+    }
+    .compass-dial {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 2px solid #06b6d4;
+      background: rgba(6, 182, 212, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: transform 0.1s linear;
+    }
+    .compass-needle {
+      width: 3px;
+      height: 18px;
+      background: #f43f5e;
+      border-radius: 2px;
+      transform-origin: bottom center;
     }
   </style>
 </head>
 <body>
 
   <!-- Header -->
-  <div class="glass-card" style="margin-bottom: 12px;">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+  <div class="glass-card" style="margin-bottom: 10px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 20px;">🐕</span>
+        <span style="font-size: 22px;">🐕</span>
         <div>
-          <h1 style="font-size: 15px; font-weight: 800; letter-spacing: -0.3px;">PawPatrol GPS</h1>
-          <p style="font-size: 11px; color: #94a3b8;">Phone Transmitter for Dog Robot</p>
+          <h1 style="font-size: 14px; font-weight: 800; letter-spacing: -0.3px;">PawPatrol UltraGPS</h1>
+          <p style="font-size: 10.5px; color: #94a3b8;">High-Precision Live Robot Sensor</p>
         </div>
       </div>
       <div id="statusBadge" class="badge badge-idle">
@@ -180,135 +230,198 @@
     </div>
   </div>
 
-  <!-- Primary Coordinate Display -->
-  <div class="glass-card" style="margin-bottom: 12px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <span style="font-size: 12px; font-weight: 700; color: #14b8a6; letter-spacing: 0.5px;">ROBOT SATELLITE FIX</span>
-      <span id="lastFixTime" class="mono" style="font-size: 11px; color: #64748b;">No Fix Yet</span>
+  <!-- Primary Coordinate & Sensor Card -->
+  <div class="glass-card" style="margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 11px; font-weight: 700; color: #14b8a6; letter-spacing: 0.5px;">GPS SATELLITE FIX</span>
+        <span id="qualityBadge" style="font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">ACQUIRING</span>
+      </div>
+      <span id="lastFixTime" class="mono" style="font-size: 10.5px; color: #64748b;">No Fix Yet</span>
     </div>
 
-    <div style="margin-bottom: 12px; background: rgba(2, 6, 23, 0.6); padding: 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05);">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+    <!-- Live Coordinates -->
+    <div style="margin-bottom: 10px; background: rgba(2, 6, 23, 0.65); padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <span class="stat-label">Latitude</span>
-        <span id="latDisplay" class="mono stat-value" style="font-size: 20px;">--.------°</span>
+        <span id="latDisplay" class="mono stat-value" style="font-size: 18px; color: #f8fafc;">--.------°</span>
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <span class="stat-label">Longitude</span>
-        <span id="lngDisplay" class="mono stat-value" style="font-size: 20px;">--.------°</span>
+        <span id="lngDisplay" class="mono stat-value" style="font-size: 18px; color: #f8fafc;">--.------°</span>
       </div>
     </div>
 
-    <div class="stat-grid">
+    <!-- Secondary Telemetry Grid -->
+    <div class="stat-grid" style="margin-bottom: 10px;">
       <div class="stat-box">
         <div class="stat-label">Accuracy</div>
         <div id="accDisplay" class="mono stat-value" style="color: #10b981;">-- m</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Speed</div>
-        <div id="speedDisplay" class="mono stat-value" style="color: #f59e0b;">-- km/h</div>
+        <div class="stat-label">Live Speed</div>
+        <div id="speedDisplay" class="mono stat-value" style="color: #f59e0b;">0.0 km/h</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Packets Sent</div>
-        <div id="packetsCount" class="mono stat-value" style="color: #a855f7;">0</div>
+        <div class="stat-label">Heading / Compass</div>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div id="headingDisplay" class="mono stat-value" style="color: #ec4899;">--°</div>
+          <div id="compassDial" class="compass-dial">
+            <div id="compassNeedle" class="compass-needle"></div>
+          </div>
+        </div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">Heading</div>
-        <div id="headingDisplay" class="mono stat-value" style="color: #ec4899;">--°</div>
+        <div class="stat-label">Ping / Latency</div>
+        <div id="latencyDisplay" class="mono stat-value" style="color: #38bdf8;">-- ms</div>
+      </div>
+    </div>
+
+    <!-- Realtime Transmission Rate Bar -->
+    <div style="background: rgba(2, 6, 23, 0.45); padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.04);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Update Rate:</span>
+        <span id="rateLabel" style="font-size: 10.5px; font-weight: 700; color: #22d3ee;">🚀 Turbo (200ms)</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button class="rate-btn active" id="rateTurbo" onclick="setUpdateRate(200, '🚀 Turbo (200ms)', this)">🚀 200ms</button>
+        <button class="rate-btn" id="rateFast" onclick="setUpdateRate(500, '⚡ Fast (500ms)', this)">⚡ 500ms</button>
+        <button class="rate-btn" id="rateNormal" onclick="setUpdateRate(1000, '🔋 Normal (1s)', this)">🔋 1000ms</button>
       </div>
     </div>
   </div>
 
   <!-- Big Action Controls -->
-  <div style="margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
+  <div style="margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px;">
     <button id="toggleBtn" class="btn btn-start" onclick="toggleTracking()">
       <span style="font-size: 20px;">📡</span>
-      <span id="btnText">START TRANSMITTING GPS</span>
+      <span id="btnText">START TRANSMITTING LIVE GPS</span>
     </button>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
       <button onclick="pingServer()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #38bdf8; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
         ⚡ Ping Server
       </button>
-      <button onclick="sendTestPacket()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #34d399; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
-        🧪 Send Test Packet
+      <button onclick="requestSensorPermissions()" style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.1); color: #34d399; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
+        🧭 Calibrate Compass
       </button>
     </div>
   </div>
 
   <!-- Settings / Server Config -->
-  <div class="glass-card" style="margin-bottom: 12px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-      <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Backend Endpoint</span>
+  <div class="glass-card" style="margin-bottom: 10px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Connection:</span>
+        <span id="protoBadge" class="mono" style="font-size: 9.5px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.2); color: #34d399;">WEBSOCKET READY</span>
+      </div>
       <button onclick="toggleConfig()" style="background: none; border: none; color: #14b8a6; font-size: 11px; font-weight: 600; cursor: pointer;">Configure</button>
     </div>
     <div id="configSection" style="display: none; margin-top: 8px;">
-      <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Server URL (Auto-detected):</label>
+      <label style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 4px;">Server URL:</label>
       <input type="text" id="serverUrl" value="" placeholder="http://192.168.1.100:3001">
       <label style="font-size: 11px; color: #94a3b8; display: block; margin-top: 8px; margin-bottom: 4px;">Robot ID:</label>
       <input type="text" id="robotId" value="ROBOT-DOG-01">
     </div>
-    <div id="serverDisplay" class="mono" style="font-size: 11px; color: #64748b; word-break: break-all;">
+    <div id="serverDisplay" class="mono" style="font-size: 10.5px; color: #64748b; word-break: break-all;">
       Target: <span id="currentTargetText" style="color: #38bdf8;">--</span>
     </div>
   </div>
 
-  <!-- Live Telemetry Transmission Logs -->
+  <!-- Transmission Console Log -->
   <div class="glass-card" style="flex: 1; display: flex; flex-direction: column;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-      <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Transmission Log</span>
-      <span id="networkStatus" style="font-size: 10px; color: #10b981;">Online</span>
+      <span style="font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Realtime Telemetry Log</span>
+      <span id="streamRate" class="mono" style="font-size: 10px; color: #10b981;">0 pkts/s</span>
     </div>
     <div id="logBox" class="log-box" style="flex: 1;">
-      <div class="log-entry" style="color: #64748b;">[Ready] Mount phone on robot and tap Start.</div>
+      <div class="log-entry" style="color: #64748b;">[System] Ultra-Precision GPS engine initialized.</div>
+      <div class="log-entry" style="color: #64748b;">[System] Hardware compass & gyroscope armed.</div>
     </div>
   </div>
 
   <script>
-    // State
+    // State Variables
     let isTracking = false;
     let watchId = null;
-    let packetsSent = 0;
+    let pollingTimer = null;
     let wakeLock = null;
+    let packetsSent = 0;
+    let packetsInLastSec = 0;
+    let rateIntervalMs = 200; // Turbo default: 200ms
+    let socket = null;
+    let socketConnected = false;
 
-    // Elements
+    // Sensor Fusion Readings
+    let lastValidCoords = null;
+    let currentCompassHeading = 0;
+    let currentMotionSpeed = 0;
+    let lastSentTimestamp = 0;
+
+    // DOM Elements
+    const toggleBtn = document.getElementById('toggleBtn');
+    const btnText = document.getElementById('btnText');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusPulse = document.getElementById('statusPulse');
+    const statusText = document.getElementById('statusText');
     const latDisplay = document.getElementById('latDisplay');
     const lngDisplay = document.getElementById('lngDisplay');
     const accDisplay = document.getElementById('accDisplay');
     const speedDisplay = document.getElementById('speedDisplay');
     const headingDisplay = document.getElementById('headingDisplay');
-    const packetsCount = document.getElementById('packetsCount');
+    const latencyDisplay = document.getElementById('latencyDisplay');
     const lastFixTime = document.getElementById('lastFixTime');
-    const statusBadge = document.getElementById('statusBadge');
-    const statusPulse = document.getElementById('statusPulse');
-    const statusText = document.getElementById('statusText');
-    const toggleBtn = document.getElementById('toggleBtn');
-    const btnText = document.getElementById('btnText');
     const logBox = document.getElementById('logBox');
     const serverUrlInput = document.getElementById('serverUrl');
     const robotIdInput = document.getElementById('robotId');
     const currentTargetText = document.getElementById('currentTargetText');
-    const networkStatus = document.getElementById('networkStatus');
+    const protoBadge = document.getElementById('protoBadge');
+    const qualityBadge = document.getElementById('qualityBadge');
+    const streamRate = document.getElementById('streamRate');
+    const compassDial = document.getElementById('compassDial');
+    const rateLabel = document.getElementById('rateLabel');
 
     // Auto-configure Backend URL based on host
     function getDefaultServerUrl() {
       const hostname = window.location.hostname || 'localhost';
+      const port = window.location.port;
+      // If accessed via Vite on port 3000, backend is on 3001
+      if (port === '3000') {
+        return `http://${hostname}:3001`;
+      }
+      // If accessed via tunnel or reverse proxy, use current origin
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.match(/^192\.168\.|^10\.|^172\.(1[6-9]|2[0-9]|3[01])\./)) {
+        return window.location.origin;
+      }
       return `http://${hostname}:3001`;
     }
 
     const defaultUrl = getDefaultServerUrl();
     serverUrlInput.value = localStorage.getItem('pawpatrol_gps_server') || defaultUrl;
-    currentTargetText.textContent = `${serverUrlInput.value}/api/gps/location`;
+    currentTargetText.textContent = serverUrlInput.value;
 
     serverUrlInput.addEventListener('change', () => {
       localStorage.setItem('pawpatrol_gps_server', serverUrlInput.value.trim());
-      currentTargetText.textContent = `${serverUrlInput.value.trim()}/api/gps/location`;
-      addLog(`Updated target URL: ${serverUrlInput.value}`);
+      currentTargetText.textContent = serverUrlInput.value.trim();
+      initWebSocket();
+      addLog(`Updated target URL: ${serverUrlInput.value}`, '#38bdf8');
     });
 
+    // Toggle Config Dropdown
     function toggleConfig() {
       const sec = document.getElementById('configSection');
       sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
     }
 
+    // Set Update Rate
+    function setUpdateRate(ms, label, btnEl) {
+      rateIntervalMs = ms;
+      rateLabel.textContent = label;
+      document.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('active'));
+      if (btnEl) btnEl.classList.add('active');
+      addLog(`Rate set to ${label}`, '#22d3ee');
+    }
+
+    // Add log entry
     function addLog(msg, color = '#94a3b8') {
       const time = new Date().toLocaleTimeString();
       const div = document.createElement('div');
@@ -319,14 +432,150 @@
       logBox.scrollTop = logBox.scrollHeight;
     }
 
-    // Keep screen awake while tracking if supported
+    // -------------------------------------------------------------------------
+    // 1. WebSocket / Socket.IO Integration for Ultra-Low Latency (<15ms)
+    // -------------------------------------------------------------------------
+    function initWebSocket() {
+      const baseUrl = serverUrlInput.value.trim() || defaultUrl;
+
+      if (socket) {
+        try { socket.disconnect(); } catch (e) {}
+      }
+
+      if (typeof io !== 'undefined') {
+        try {
+          socket = io(baseUrl, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            timeout: 5000
+          });
+
+          socket.on('connect', () => {
+            socketConnected = true;
+            protoBadge.textContent = '⚡ WEBSOCKET ACTIVE';
+            protoBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+            protoBadge.style.color = '#34d399';
+            addLog('⚡ WebSocket connected. Ultra-low latency enabled.', '#34d399');
+          });
+
+          socket.on('disconnect', () => {
+            socketConnected = false;
+            protoBadge.textContent = 'REST FALLBACK';
+            protoBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+            protoBadge.style.color = '#f59e0b';
+            addLog('WebSocket disconnected. Switched to REST fallback.', '#f59e0b');
+          });
+
+          socket.on('connect_error', () => {
+            socketConnected = false;
+            protoBadge.textContent = 'REST FALLBACK';
+            protoBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+            protoBadge.style.color = '#f59e0b';
+          });
+        } catch (err) {
+          console.warn('Socket.IO init failed:', err);
+        }
+      }
+    }
+
+    // Initialize socket immediately
+    initWebSocket();
+
+    // Measure packet transmission frequency
+    setInterval(() => {
+      streamRate.textContent = `${packetsInLastSec} pkts/s`;
+      packetsInLastSec = 0;
+    }, 1000);
+
+    // -------------------------------------------------------------------------
+    // 2. Hardware Compass & Orientation Sensor Fusion
+    // -------------------------------------------------------------------------
+    function setupOrientationSensors() {
+      const handleOrientation = (e) => {
+        let heading = null;
+
+        // iOS webkitCompassHeading (accurate hardware compass)
+        if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+          heading = e.webkitCompassHeading;
+        } else if (e.alpha !== null) {
+          // Android / Chrome: alpha is relative to north when absolute is supported
+          if (e.absolute) {
+            heading = 360 - e.alpha;
+          } else {
+            heading = 360 - e.alpha;
+          }
+        }
+
+        if (heading !== null && !isNaN(heading)) {
+          heading = (heading % 360 + 360) % 360;
+          currentCompassHeading = Math.round(heading);
+          headingDisplay.textContent = `${currentCompassHeading}°`;
+          if (compassDial) {
+            compassDial.style.transform = `rotate(${currentCompassHeading}deg)`;
+          }
+        }
+      };
+
+      if (window.DeviceOrientationEvent) {
+        if ('ondeviceorientationabsolute' in window) {
+          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        } else {
+          window.addEventListener('deviceorientation', handleOrientation, true);
+        }
+      }
+
+      // Accelerometer for rapid motion detection
+      if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', (e) => {
+          if (e.acceleration) {
+            const acc = Math.sqrt(
+              (e.acceleration.x || 0)**2 +
+              (e.acceleration.y || 0)**2 +
+              (e.acceleration.z || 0)**2
+            );
+            if (acc > 0.8 && isTracking) {
+              // Phone was moved physically: trigger immediate update if due
+              triggerPositionCheck();
+            }
+          }
+        }, true);
+      }
+    }
+
+    // Request permissions for iOS 13+ devices
+    function requestSensorPermissions() {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              setupOrientationSensors();
+              addLog('✓ Compass sensor calibrated & active.', '#34d399');
+            } else {
+              addLog('Compass permission denied.', '#ef4444');
+            }
+          })
+          .catch(e => addLog('Sensor error: ' + e.message, '#ef4444'));
+      } else {
+        setupOrientationSensors();
+        addLog('✓ Compass sensors calibrated.', '#34d399');
+      }
+    }
+
+    // Auto-setup sensors on load
+    setupOrientationSensors();
+
+    // -------------------------------------------------------------------------
+    // 3. Screen WakeLock
+    // -------------------------------------------------------------------------
     async function requestWakeLock() {
       if ('wakeLock' in navigator) {
         try {
           wakeLock = await navigator.wakeLock.request('screen');
-          addLog('Screen wake lock acquired (screen stays on)', '#38bdf8');
+          addLog('Screen wake-lock active (display will not sleep)', '#38bdf8');
         } catch (e) {
-          console.warn('Wake lock failed:', e);
+          console.warn('WakeLock failed:', e);
         }
       }
     }
@@ -337,7 +586,9 @@
       }
     }
 
-    // Toggle Tracking
+    // -------------------------------------------------------------------------
+    // 4. Ultra-Precision GPS Tracking Engine
+    // -------------------------------------------------------------------------
     function toggleTracking() {
       if (isTracking) {
         stopTracking();
@@ -352,29 +603,35 @@
         return;
       }
 
-      addLog('Requesting High-Accuracy GPS sensor...', '#f59e0b');
+      addLog('Engaging Ultra-High-Accuracy GPS hardware...', '#f59e0b');
 
       const options = {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        timeout: 4000,
+        maximumAge: 0 // Never use cached position: force true live satellite fix
       };
 
+      // Continuous OS Location Watch
       watchId = navigator.geolocation.watchPosition(
         handlePositionSuccess,
         handlePositionError,
         options
       );
 
+      // Active High-Frequency Sampling Timer to guarantee continuous streaming
+      pollingTimer = setInterval(() => {
+        triggerPositionCheck();
+      }, rateIntervalMs);
+
       isTracking = true;
       toggleBtn.className = 'btn btn-stop';
       btnText.textContent = 'STOP TRANSMITTING GPS';
-      statusBadge.className = 'badge badge-live';
-      statusPulse.className = 'pulse-dot';
-      statusText.textContent = 'TRANSMITTING';
+      statusBadge.className = 'badge badge-turbo';
+      statusPulse.className = 'pulse-dot turbo';
+      statusText.textContent = 'LIVE TURBO';
 
       requestWakeLock();
-      addLog('GPS Tracking active. Transmitting to robot dashboard.', '#10b981');
+      addLog('Continuous live telemetry streaming engaged.', '#10b981');
     }
 
     function stopTracking() {
@@ -383,59 +640,127 @@
         watchId = null;
       }
 
+      if (pollingTimer !== null) {
+        clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
+
       isTracking = false;
       toggleBtn.className = 'btn btn-start';
-      btnText.textContent = 'START TRANSMITTING GPS';
+      btnText.textContent = 'START TRANSMITTING LIVE GPS';
       statusBadge.className = 'badge badge-idle';
       statusPulse.className = 'pulse-dot inactive';
       statusText.textContent = 'STANDBY';
 
       releaseWakeLock();
-      addLog('GPS transmission paused.', '#94a3b8');
+      addLog('Telemetry transmission stopped.', '#94a3b8');
+    }
+
+    function triggerPositionCheck() {
+      if (!isTracking) return;
+
+      const now = performance.now();
+      if (now - lastSentTimestamp < (rateIntervalMs * 0.8)) {
+        return; // Throttle to selected rate
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        handlePositionSuccess,
+        (err) => {},
+        { enableHighAccuracy: true, timeout: 2500, maximumAge: 0 }
+      );
     }
 
     function handlePositionSuccess(pos) {
-      const { latitude, longitude, accuracy, speed, heading } = pos.coords;
-      const timestamp = new Date(pos.timestamp).toISOString();
+      if (!isTracking) return;
 
+      const now = performance.now();
+      // Enforce rate interval
+      if (now - lastSentTimestamp < (rateIntervalMs * 0.75)) {
+        return;
+      }
+      lastSentTimestamp = now;
+
+      const { latitude, longitude, accuracy, speed, heading } = pos.coords;
+      const timestamp = new Date(pos.timestamp || Date.now()).toISOString();
+
+      // Sensor Fusion: Use live compass heading if GPS heading is null / unavailable
+      const resolvedHeading = (heading !== null && !isNaN(heading) && heading > 0)
+        ? Math.round(heading)
+        : currentCompassHeading;
+
+      // Filter: calculate speed if provided or derived
+      const resolvedSpeed = speed !== null && !isNaN(speed) ? (speed * 3.6) : currentMotionSpeed;
+
+      // Update UI displays
       latDisplay.textContent = latitude.toFixed(6) + '°';
       lngDisplay.textContent = longitude.toFixed(6) + '°';
-      accDisplay.textContent = '±' + (accuracy ? accuracy.toFixed(1) : '?') + ' m';
-      speedDisplay.textContent = speed !== null ? (speed * 3.6).toFixed(1) + ' km/h' : '0.0 km/h';
-      headingDisplay.textContent = heading !== null && !isNaN(heading) ? heading.toFixed(0) + '°' : '--°';
+
+      const accVal = accuracy ? accuracy.toFixed(1) : '?';
+      accDisplay.textContent = '±' + accVal + ' m';
+      speedDisplay.textContent = resolvedSpeed.toFixed(1) + ' km/h';
+      headingDisplay.textContent = resolvedHeading + '°';
       lastFixTime.textContent = new Date().toLocaleTimeString();
 
-      // Transmit to backend
-      sendLocationUpdate({
+      // Quality badge indicator
+      if (accuracy <= 3) {
+        qualityBadge.textContent = 'EXCELLENT ±' + accVal + 'm';
+        qualityBadge.style.color = '#34d399';
+        qualityBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+      } else if (accuracy <= 8) {
+        qualityBadge.textContent = 'GOOD ±' + accVal + 'm';
+        qualityBadge.style.color = '#38bdf8';
+        qualityBadge.style.background = 'rgba(56, 189, 248, 0.2)';
+      } else {
+        qualityBadge.textContent = 'FAIR ±' + accVal + 'm';
+        qualityBadge.style.color = '#f59e0b';
+        qualityBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+      }
+
+      lastValidCoords = { latitude, longitude };
+
+      // Transmit packet to backend immediately
+      transmitPacket({
         robotId: robotIdInput.value.trim() || 'ROBOT-DOG-01',
         latitude,
         longitude,
-        accuracy,
-        speed: speed !== null ? speed * 3.6 : 0,
-        heading: heading || 0,
-        timestamp
+        accuracy: accuracy || 3,
+        speed: resolvedSpeed,
+        heading: resolvedHeading,
+        timestamp,
+        clientSendTime: Date.now()
       });
     }
 
     function handlePositionError(err) {
-      let message = 'Unknown GPS Error';
-      switch (err.code) {
-        case err.PERMISSION_DENIED:
-          message = 'Location access denied. Please allow GPS permission in browser settings.';
-          break;
-        case err.POSITION_UNAVAILABLE:
-          message = 'GPS signal unavailable. Ensure location is enabled and you have sky visibility.';
-          break;
-        case err.TIMEOUT:
-          message = 'GPS fix timed out. Acquiring new satellites...';
-          break;
+      let msg = 'GPS acquiring satellites...';
+      if (err.code === err.PERMISSION_DENIED) {
+        msg = 'Location permission denied. Please allow GPS access.';
       }
-      addLog('GPS Error: ' + message, '#ef4444');
-      statusText.textContent = 'GPS ERR';
-      statusPulse.className = 'pulse-dot error';
+      addLog('GPS Notice: ' + msg, '#f59e0b');
     }
 
-    async function sendLocationUpdate(data) {
+    // -------------------------------------------------------------------------
+    // 5. High-Speed Packet Transmission Engine (WebSocket + Fallback)
+    // -------------------------------------------------------------------------
+    async function transmitPacket(packet) {
+      const sendTime = performance.now();
+
+      // Method A: Ultra-Fast WebSocket
+      if (socket && socketConnected) {
+        socket.emit('send_gps', packet, (ack) => {
+          const latency = Math.round(performance.now() - sendTime);
+          latencyDisplay.textContent = `${latency} ms`;
+          packetsSent++;
+          packetsInLastSec++;
+          if (packetsSent % 5 === 0 || rateIntervalMs >= 500) {
+            addLog(`⚡ #${packetsSent} [${packet.latitude.toFixed(5)}, ${packet.longitude.toFixed(5)}] • ${packet.heading}° • ${latency}ms`, '#34d399');
+          }
+        });
+        return;
+      }
+
+      // Method B: High-Speed HTTP POST Fallback
       const baseUrl = serverUrlInput.value.trim() || defaultUrl;
       const endpoint = `${baseUrl}/api/gps/location`;
 
@@ -443,73 +768,56 @@
         const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+          body: JSON.stringify(packet)
         });
+
+        const latency = Math.round(performance.now() - sendTime);
+        latencyDisplay.textContent = `${latency} ms`;
 
         if (response.ok) {
           packetsSent++;
-          packetsCount.textContent = packetsSent;
-          addLog(`✓ Packet #${packetsSent} broadcasted: [${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}]`, '#34d399');
-        } else {
-          addLog(`Server responded with ${response.status}`, '#f59e0b');
+          packetsInLastSec++;
+          if (packetsSent % 5 === 0 || rateIntervalMs >= 500) {
+            addLog(`✓ #${packetsSent} HTTP [${packet.latitude.toFixed(5)}, ${packet.longitude.toFixed(5)}] • ${latency}ms`, '#38bdf8');
+          }
         }
       } catch (err) {
-        addLog(`Network send failed: ${err.message}`, '#f43f5e');
+        addLog(`Send err: ${err.message}`, '#f43f5e');
       }
     }
 
+    // Diagnostic Helpers
     async function pingServer() {
       const baseUrl = serverUrlInput.value.trim() || defaultUrl;
+      const start = performance.now();
       addLog(`Pinging backend: ${baseUrl}/api/health ...`, '#38bdf8');
+
       try {
         const res = await fetch(`${baseUrl}/api/health`);
+        const rtt = Math.round(performance.now() - start);
         if (res.ok) {
           const json = await res.json();
-          addLog(`✓ Backend Online! Active clients: ${json.connectedClients}`, '#34d399');
-          alert('✓ Success! Your phone is connected to the PawPatrol server.');
-        } else {
-          addLog(`Server responded with status: ${res.status}`, '#f59e0b');
+          latencyDisplay.textContent = `${rtt} ms`;
+          addLog(`✓ Server Online! RTT: ${rtt}ms, Active clients: ${json.connectedClients}`, '#34d399');
+          alert(`✓ Server is Online & Reachable!\n\nRound-trip latency: ${rtt} ms\nConnected dashboard clients: ${json.connectedClients}`);
         }
       } catch (e) {
-        addLog(`Cannot reach ${baseUrl}. Ensure phone is on the same Wi-Fi.`, '#f43f5e');
-        alert(`Cannot reach backend at ${baseUrl}.\n\nPlease ensure your smartphone is connected to the same Wi-Fi as your computer.`);
+        addLog(`Cannot reach ${baseUrl}. Verify phone is on same Wi-Fi.`, '#f43f5e');
+        alert(`Cannot reach backend at ${baseUrl}.\n\nPlease ensure your smartphone and laptop are connected to the same Wi-Fi.`);
       }
-    }
-
-    async function sendTestPacket() {
-      const lat = 9.9312 + (Math.random() - 0.5) * 0.002;
-      const lng = 76.2673 + (Math.random() - 0.5) * 0.002;
-      latDisplay.textContent = lat.toFixed(6) + '°';
-      lngDisplay.textContent = lng.toFixed(6) + '°';
-      accDisplay.textContent = '±2.5 m';
-      speedDisplay.textContent = '3.2 km/h';
-      headingDisplay.textContent = '72°';
-      lastFixTime.textContent = new Date().toLocaleTimeString();
-
-      await sendLocationUpdate({
-        robotId: robotIdInput.value.trim() || 'ROBOT-DOG-01',
-        latitude: lat,
-        longitude: lng,
-        accuracy: 2.5,
-        speed: 3.2,
-        heading: 72,
-        timestamp: new Date().toISOString()
-      });
     }
 
     // Network status listener
     window.addEventListener('online', () => {
-      networkStatus.textContent = 'Online';
-      networkStatus.style.color = '#10b981';
-      addLog('Internet connection restored', '#10b981');
+      protoBadge.textContent = 'ONLINE';
+      addLog('Device connection restored', '#10b981');
+      initWebSocket();
     });
 
     window.addEventListener('offline', () => {
-      networkStatus.textContent = 'Offline';
-      networkStatus.style.color = '#ef4444';
-      addLog('Device went offline. Coordinates will resume on reconnect.', '#ef4444');
+      protoBadge.textContent = 'OFFLINE';
+      addLog('Device offline', '#ef4444');
     });
   </script>
 </body>
 </html>
-

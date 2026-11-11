@@ -208,7 +208,7 @@ io.on('connection', (socket) => {
   socket.emit('detections_sync', detectionHistory);
 
   // Client can also push direct GPS updates via socket
-  socket.on('send_gps', (data) => {
+  socket.on('send_gps', (data, callback) => {
     const lat = parseFloat(data.latitude);
     const lng = parseFloat(data.longitude);
     if (isValidCoordinate(lat, lng)) {
@@ -224,7 +224,16 @@ io.on('connection', (socket) => {
       };
       latestLocation = record;
       locationHistory.push(record);
+      if (locationHistory.length > MAX_HISTORY) {
+        locationHistory.shift();
+      }
       io.emit('gps_update', record);
+
+      if (typeof callback === 'function') {
+        callback({ success: true, timestamp: Date.now() });
+      }
+    } else if (typeof callback === 'function') {
+      callback({ success: false, error: 'Invalid coordinates' });
     }
   });
 
